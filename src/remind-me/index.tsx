@@ -10,6 +10,13 @@ export const webpackModules: ExtensionWebExports["webpackModules"] = {
       {
         ext: "remind-me",
         id: "someLibrary"
+      },
+      {
+        id: "react"
+      },
+      {
+        ext: "contextMenu",
+        id: "contextMenu"
       }
     ],
     entrypoint: true

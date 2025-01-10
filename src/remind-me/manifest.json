@@ -3,6 +3,7 @@
   "id": "remind-me",
   "version": "1.0.0",
   "apiLevel": 2,
+  "dependencies": ["contextMenu"],
   "meta": {
     "name": "Remind Me",
     "tagline": "Stop forgetting things",
