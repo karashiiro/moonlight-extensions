@@ -1,0 +1,13 @@
+{
+  "$schema": "https://moonlight-mod.github.io/manifest.schema.json",
+  "id": "remind-me",
+  "version": "1.0.0",
+  "apiLevel": 2,
+  "meta": {
+    "name": "Remind Me",
+    "tagline": "Stop forgetting things",
+    "description": "TODO",
+    "authors": ["karashiiro"],
+    "source": "https://github.com/karashiiro/remind-me"
+  }
+}
