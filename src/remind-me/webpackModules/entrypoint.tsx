@@ -3,7 +3,7 @@ import spacepack from "@moonlight-mod/wp/spacepack_spacepack";
 const logger = moonlight.getLogger("remind-me/entrypoint");
 logger.info("Hello from entrypoint!");
 
-/*
+/* As of 1/10/2025
 2818: Bookmarks and reminders experiment
 141321: Inbox button
 178088: Tab router

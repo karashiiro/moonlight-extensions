@@ -55,15 +55,7 @@ export const webpackModules: ExtensionWebExports["webpackModules"] = {
   entrypoint: {
     dependencies: [
       {
-        ext: "remind-me",
-        id: "someLibrary"
-      },
-      {
         id: "react"
-      },
-      {
-        ext: "contextMenu",
-        id: "contextMenu"
       },
       {
         ext: "spacepack",
