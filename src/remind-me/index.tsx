@@ -75,14 +75,5 @@ export const webpackModules: ExtensionWebExports["webpackModules"] = {
       TAB_ROUTER_SIGNATURE
     ],
     entrypoint: true
-    // See `src/remind-me/webpackModules/entrypoint.ts` for the source of this module.
-  },
-  someLibrary: {
-    entrypoint: true,
-    run: (module, exports, require) => {
-      const logger = moonlight.getLogger("remind-me/someLibrary");
-      logger.info("Hello from someLibrary!");
-      module.exports = "Hello from someLibrary's exports!";
-    }
   }
 };
