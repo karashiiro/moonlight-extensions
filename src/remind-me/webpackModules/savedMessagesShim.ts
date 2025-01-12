@@ -1,9 +1,18 @@
+import { SavedMessagesStore } from "@moonlight-mod/wp/remind-me_savedMessagesStore";
+
+interface PutSavedMessageCommand {
+  channelId: string;
+  messageId: string;
+}
+
 const logger = moonlight.getLogger("remind-me/savedMessagesShim");
 logger.info("Loaded saved messages shim");
 
-export function putSavedMessage(message: unknown) {
+logger.info(SavedMessagesStore);
+
+export function putSavedMessage({ channelId, messageId }: PutSavedMessageCommand) {
   logger.info("Saving message");
-  logger.info(message);
+  logger.info(channelId, messageId);
   return Promise.resolve();
 }
 
