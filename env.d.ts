@@ -8,16 +8,27 @@ declare module "@moonlight-mod/wp/remind-me_savedMessagesStore" {
   // TODO: Fill out fields
   type Message = object;
 
+  interface SavedMessageData {
+    channelId: string;
+    messageId: string;
+    dueAt?: Timestamp;
+  }
+
+  interface SavedMessage {
+    message: Message;
+    saveData: SavedMessageData;
+  }
+
   namespace Stores {
-    class SavedMessagesStore extends Store<Message> {
+    class SavedMessagesStore extends Store<SavedMessage> {
       getIsStale(): boolean;
       getLastChanged(): Timestamp;
-      getMessageBookmarks(): Message[];
-      getMessageReminders(): Message[];
+      getMessageBookmarks(): SavedMessage[];
+      getMessageReminders(): SavedMessage[];
       getOverdueMessageReminderCount();
-      getSavedMessage(channelId: string, messageId: string): Message | null;
+      getSavedMessage(channelId: string, messageId: string): SavedMessage | null;
       getSavedMessageCount(): number;
-      getSavedMessages(): Message[];
+      getSavedMessages(): SavedMessage[];
       hasOverdueReminder(): boolean;
       isMessageBookmarked(): boolean;
       isMessageReminder(): boolean;
