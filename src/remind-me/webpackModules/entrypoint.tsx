@@ -14,5 +14,5 @@ logger.info("Hello from entrypoint!");
 791914: Tab bar
 956961: Reminders tab
 */
-logger.info(`Test code:\n${spacepack.inspect(192720)}`);
+logger.info(`Test code:\n${spacepack.inspect(791914)}`);
 //logger.info("Test scan:", spacepack.findByCode("RecentsHeader"));
