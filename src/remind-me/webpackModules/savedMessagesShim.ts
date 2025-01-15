@@ -12,7 +12,11 @@ const db: Record<string, SavedMessageData> = {};
 export function putSavedMessage(data: SavedMessageData): Promise<void> {
   // Save message metadata to external resource (no Flux interaction)
   logger.info("Saving message", data);
-  db[`${data.channelId}-${data.messageId}`] = data;
+  db[`${data.channelId}-${data.messageId}`] = {
+    ...data,
+    savedAt: Date.now()
+  };
+
   return Promise.resolve();
 }
 
@@ -23,11 +27,20 @@ export function deleteSavedMessage(data: SavedMessageData): Promise<boolean> {
   return Promise.resolve(true);
 }
 
-function mapMessage(m: any): any {
+function mapMessage(m: any, saveData: SavedMessageData): any {
+  // TODO: pass to Message constructor
   return {
     ...m,
     channelId: m.channel_id,
-    messageId: m.message_id
+    messageId: m.message_id,
+    savedAt: new Date(saveData.savedAt ?? Date.now()),
+    authorSummary: m.author_summary,
+    channelSummary: m.channel_summary,
+    messageSummary: m.message_summary,
+    guildId: 0 === m.guild_id ? undefined : m.guild_id,
+    authorId: 0 === m.author_id ? undefined : m.author_id,
+    notes: m.notes,
+    dueAt: null != saveData.dueAt ? new Date(saveData.dueAt) : undefined
   };
 }
 
@@ -39,18 +52,20 @@ export function getSavedMessages(): Promise<void> {
   */
   logger.info("Updating saved messages");
 
-  const messages = Object.values(db).map((d) => {
+  const messages: [any, SavedMessageData][] = Object.values(db).map((d) => {
     const message = MessageStore.getMessage(d.channelId, d.messageId);
     logger.info(message);
-    return message;
+    return [message, d];
   });
 
   Dispatcher.dispatch({
     type: "SAVED_MESSAGES_UPDATE",
-    savedMessages: messages.map((message) => ({
-      message: mapMessage(message),
-      saveData: db[`${message.channel_id}-${message.message_id}`]
-    }))
+    savedMessages: messages.map(([message, saveData]) => {
+      return {
+        message: mapMessage(message, saveData),
+        saveData: saveData
+      };
+    })
   });
 
   return Promise.resolve();

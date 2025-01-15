@@ -12,6 +12,7 @@ declare module "@moonlight-mod/wp/remind-me_savedMessagesStore" {
     channelId: string;
     messageId: string;
     dueAt?: Timestamp;
+    savedAt?: Timestamp;
   }
 
   interface SavedMessage {
