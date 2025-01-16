@@ -97,6 +97,7 @@ export const webpackModules: ExtensionWebExports["webpackModules"] = {
       '"SavedMessagesStore"'
     ]
   },
+  savedMessagesConfig: {},
   savedMessagesShim: {
     dependencies: [
       {
