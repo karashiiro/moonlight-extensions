@@ -10,12 +10,5 @@
     "description": "Enables the Bookmarks and Reminders experiments in the Inbox, and patches them to make them usable.",
     "authors": ["karashiiro"],
     "source": "https://github.com/karashiiro/remind-me"
-  },
-  "settings": {
-    "messages": {
-      "type": "string",
-      "displayName": "Boomarked Message Data",
-      "description": "Your bookmarked messages. Don't touch these."
-    }
   }
 }
