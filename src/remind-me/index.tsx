@@ -116,10 +116,6 @@ export const webpackModules: ExtensionWebExports["webpackModules"] = {
   },
   entrypoint: {
     dependencies: [
-      {
-        ext: "spacepack",
-        id: "spacepack"
-      },
       TODOS_EXPERIMENT_SIGNATURE,
       REMINDERS_EXPERIMENT_SIGNATURE,
       TAB_SELECTOR_SIGNATURE,
