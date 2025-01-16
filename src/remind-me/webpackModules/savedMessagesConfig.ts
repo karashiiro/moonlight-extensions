@@ -64,6 +64,10 @@ export class SavedMessagesConfig {
   }
 }
 
+/**
+ * Loads all saved messages from the extension config.
+ * @returns The message database.
+ */
 function loadSavedMessagesFromConfig(): Record<string, SavedMessageData> | null {
   const messages = moonlight.getConfigOption<string>("remind-me", "messages");
   if (messages == null) {
@@ -74,11 +78,12 @@ function loadSavedMessagesFromConfig(): Record<string, SavedMessageData> | null 
   return JSON.parse(messagesJson);
 }
 
+/**
+ * Saves all saved messages to the extension config.
+ * @param messages The message database.
+ */
 function saveSavedMessagesToConfig(messages: Record<string, SavedMessageData>) {
   const messagesJson = JSON.stringify(messages);
-
-  // Compress the payload
-
   const messagesBinary = btoa(messagesJson);
   moonlight.setConfigOption<string>("remind-me", "messages", messagesBinary);
 }
