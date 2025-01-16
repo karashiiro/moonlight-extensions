@@ -1,5 +1,11 @@
 /// <reference types="@moonlight-mod/types" />
 
+declare module "@moonlight-mod/wp/remind-me_message" {
+  declare class Message {
+    constructor(rawMessage: unknown);
+  }
+}
+
 declare module "@moonlight-mod/wp/remind-me_savedMessagesStore" {
   import { Store } from "@moonlight-mod/wp/discord/packages/flux";
 

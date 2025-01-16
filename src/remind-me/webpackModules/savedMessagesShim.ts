@@ -1,6 +1,7 @@
 import { SavedMessageData, SavedMessagesStore } from "@moonlight-mod/wp/remind-me_savedMessagesStore";
 import { MessageStore } from "@moonlight-mod/wp/common_stores";
 import Dispatcher from "@moonlight-mod/wp/discord/Dispatcher";
+import { Message } from "@moonlight-mod/wp/remind-me_message";
 
 const logger = moonlight.getLogger("remind-me/savedMessagesShim");
 logger.info("Loaded saved messages shim");
@@ -11,6 +12,8 @@ const db: Record<string, SavedMessageData> = {};
 
 export function putSavedMessage(data: SavedMessageData): Promise<void> {
   // Save message metadata to external resource (no Flux interaction)
+  // TODO: Should we dispatch an event here to make the UI update?
+  // The original code doesn't and it looks like nothing happens.
   logger.info("Saving message", data);
   db[`${data.channelId}-${data.messageId}`] = {
     ...data,
@@ -22,14 +25,15 @@ export function putSavedMessage(data: SavedMessageData): Promise<void> {
 
 export function deleteSavedMessage(data: SavedMessageData): Promise<boolean> {
   // Delete message metadata from external resource (no Flux interaction)
+  // TODO: Should we dispatch an event here to make the UI update?
+  // The original code doesn't and it looks like nothing happens.
   logger.info("Deleting saved message", data);
   delete db[`${data.channelId}-${data.messageId}`];
   return Promise.resolve(true);
 }
 
 function mapMessage(m: any, saveData: SavedMessageData): any {
-  // TODO: pass to Message constructor
-  return {
+  return new Message({
     ...m,
     channelId: m.channel_id,
     messageId: m.message_id,
@@ -41,10 +45,14 @@ function mapMessage(m: any, saveData: SavedMessageData): any {
     authorId: 0 === m.author_id ? undefined : m.author_id,
     notes: m.notes,
     dueAt: null != saveData.dueAt ? new Date(saveData.dueAt) : undefined
-  };
+  });
 }
 
 export function getSavedMessages(): Promise<void> {
+  // if (!SavedMessagesStore.getIsStale()) {
+  //   return Promise.resolve();
+  // }
+
   /*
   Fetch full messages and dispatch a Flux store event like this:
 

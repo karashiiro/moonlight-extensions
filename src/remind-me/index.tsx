@@ -79,6 +79,15 @@ export const patches: ExtensionWebExports["patches"] = [
 
 // https://moonlight-mod.github.io/ext-dev/webpack/#webpack-module-insertion
 export const webpackModules: ExtensionWebExports["webpackModules"] = {
+  message: {
+    dependencies: [
+      {
+        ext: "spacepack",
+        id: "spacepack"
+      },
+      /this.messageReference=.\.messageReference/
+    ]
+  },
   savedMessagesStore: {
     dependencies: [
       {
@@ -93,6 +102,10 @@ export const webpackModules: ExtensionWebExports["webpackModules"] = {
       {
         ext: "remind-me",
         id: "savedMessagesStore"
+      },
+      {
+        ext: "remind-me",
+        id: "message"
       },
       {
         ext: "common",
