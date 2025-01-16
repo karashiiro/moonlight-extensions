@@ -6,33 +6,99 @@ import { Message } from "@moonlight-mod/wp/remind-me_message";
 const logger = moonlight.getLogger("remind-me/savedMessagesShim");
 logger.info("Loaded saved messages shim");
 
-logger.info(SavedMessagesStore);
-
+// TODO: Actual persistence
 const db: Record<string, SavedMessageData> = {};
 
+/**
+ * Stores a message in the saved-message store.
+ * @param data The message data to save.
+ */
 export function putSavedMessage(data: SavedMessageData): Promise<void> {
-  // Save message metadata to external resource (no Flux interaction)
-  // TODO: Should we dispatch an event here to make the UI update?
-  // The original code doesn't and it looks like nothing happens.
   logger.info("Saving message", data);
+
+  // Store the message data in our external store
   db[`${data.channelId}-${data.messageId}`] = {
     ...data,
     savedAt: Date.now()
   };
 
+  // Dispatch a UI event to populate the inbox
+  const message = MessageStore.getMessage(data.channelId, data.messageId);
+  Dispatcher.dispatch({
+    type: "SAVED_MESSAGE_CREATE",
+    savedMessage: {
+      message: mapMessage(message, data),
+      saveData: data
+    }
+  });
+
   return Promise.resolve();
 }
 
+/**
+ * Deletes a message from the saved-message store.
+ * @param data The message data to save.
+ * @returns true if data was deleted; otherwise false.
+ */
 export function deleteSavedMessage(data: SavedMessageData): Promise<boolean> {
-  // Delete message metadata from external resource (no Flux interaction)
-  // TODO: Should we dispatch an event here to make the UI update?
-  // The original code doesn't and it looks like nothing happens.
   logger.info("Deleting saved message", data);
-  delete db[`${data.channelId}-${data.messageId}`];
+
+  const key = `${data.channelId}-${data.messageId}`;
+  if (!(key in db)) {
+    return Promise.resolve(false);
+  }
+
+  // Delete the message fata from our external store
+  delete db[key];
+
+  // Dispatch a UI event to remove the message from the inbox
+  Dispatcher.dispatch({
+    type: "SAVED_MESSAGE_DELETE",
+    savedMessageData: data
+  });
+
   return Promise.resolve(true);
 }
 
-function mapMessage(m: any, saveData: SavedMessageData): any {
+/**
+ * Refreshes the saved-message store.
+ */
+export function getSavedMessages(): Promise<void> {
+  if (!SavedMessagesStore.getIsStale()) {
+    logger.debug("Saved message list is not yet stale, skipping update");
+    return Promise.resolve();
+  }
+
+  logger.info("Updating saved messages");
+
+  // Fetch all messages from our external store and pull the real message data from Discord
+  const messages: [any, SavedMessageData][] = Object.values(db).map((d) => {
+    const message = MessageStore.getMessage(d.channelId, d.messageId);
+    logger.info(message);
+    return [message, d];
+  });
+
+  // Dispatch a UI event to populate the inbox
+  Dispatcher.dispatch({
+    type: "SAVED_MESSAGES_UPDATE",
+    savedMessages: messages.map(([message, saveData]) => {
+      return {
+        message: mapMessage(message, saveData),
+        saveData: saveData
+      };
+    })
+  });
+
+  return Promise.resolve();
+}
+
+/**
+ * Converts a raw message from the Discord API into a Message instance.
+ * @param m A raw message payload.
+ * @param saveData Saved message data for the payload.
+ * @returns A structured Message object that can be used by the application.
+ */
+function mapMessage(m: any, saveData: SavedMessageData): Message {
   return new Message({
     ...m,
     channelId: m.channel_id,
@@ -46,35 +112,4 @@ function mapMessage(m: any, saveData: SavedMessageData): any {
     notes: m.notes,
     dueAt: null != saveData.dueAt ? new Date(saveData.dueAt) : undefined
   });
-}
-
-export function getSavedMessages(): Promise<void> {
-  // if (!SavedMessagesStore.getIsStale()) {
-  //   return Promise.resolve();
-  // }
-
-  /*
-  Fetch full messages and dispatch a Flux store event like this:
-
-  { type: "SAVED_MESSAGES_UPDATE", savedMessages: SavedMessage[] }
-  */
-  logger.info("Updating saved messages");
-
-  const messages: [any, SavedMessageData][] = Object.values(db).map((d) => {
-    const message = MessageStore.getMessage(d.channelId, d.messageId);
-    logger.info(message);
-    return [message, d];
-  });
-
-  Dispatcher.dispatch({
-    type: "SAVED_MESSAGES_UPDATE",
-    savedMessages: messages.map(([message, saveData]) => {
-      return {
-        message: mapMessage(message, saveData),
-        saveData: saveData
-      };
-    })
-  });
-
-  return Promise.resolve();
 }
