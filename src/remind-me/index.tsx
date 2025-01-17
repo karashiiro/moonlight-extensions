@@ -85,7 +85,7 @@ export const webpackModules: ExtensionWebExports["webpackModules"] = {
         ext: "spacepack",
         id: "spacepack"
       },
-      /this.messageReference=.\.messageReference/
+      /this\.messageReference=.\.messageReference/
     ]
   },
   savedMessagesStore: {
