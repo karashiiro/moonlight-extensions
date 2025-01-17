@@ -1,4 +1,4 @@
-import { SavedMessageData, SavedMessagesStore } from "@moonlight-mod/wp/remind-me_savedMessagesStore";
+import { SavedMessagesStore } from "@moonlight-mod/wp/remind-me_savedMessagesStore";
 import { SavedMessagesPersistedStore } from "@moonlight-mod/wp/remind-me_savedMessagesPersistedStore";
 import { MessageStore } from "@moonlight-mod/wp/common_stores";
 import Dispatcher from "@moonlight-mod/wp/discord/Dispatcher";

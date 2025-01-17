@@ -1,6 +1,5 @@
 import Flux from "@moonlight-mod/wp/discord/packages/flux";
 import Dispatcher from "@moonlight-mod/wp/discord/Dispatcher";
-import type { SavedMessageData } from "@moonlight-mod/wp/remind-me_savedMessagesStore";
 
 const logger = moonlight.getLogger("remind-me/savedMessagesPersistedStore");
 logger.info("Loaded savedMessagesPersistedStore");

@@ -1,5 +1,21 @@
 /// <reference types="@moonlight-mod/types" />
 
+type Timestamp = number;
+
+type Message = object;
+
+interface SavedMessageData {
+  channelId: string;
+  messageId: string;
+  dueAt?: Timestamp;
+  savedAt?: Timestamp;
+}
+
+interface SavedMessage {
+  message: Message;
+  saveData: SavedMessageData;
+}
+
 declare module "@moonlight-mod/wp/remind-me_message" {
   declare class Message {
     constructor(rawMessage: unknown);
@@ -20,23 +36,6 @@ declare module "@moonlight-mod/wp/remind-me_savedMessagesPersistedStore" {
 
 declare module "@moonlight-mod/wp/remind-me_savedMessagesStore" {
   import { Store } from "@moonlight-mod/wp/discord/packages/flux";
-
-  type Timestamp = number;
-
-  // TODO: Fill out fields
-  type Message = object;
-
-  interface SavedMessageData {
-    channelId: string;
-    messageId: string;
-    dueAt?: Timestamp;
-    savedAt?: Timestamp;
-  }
-
-  interface SavedMessage {
-    message: Message;
-    saveData: SavedMessageData;
-  }
 
   namespace Stores {
     class SavedMessagesStore extends Store<SavedMessage> {
