@@ -97,9 +97,21 @@ export const webpackModules: ExtensionWebExports["webpackModules"] = {
       '"SavedMessagesStore"'
     ]
   },
-  savedMessagesConfig: {},
+  savedMessagesPersistedStore: {
+    dependencies: [
+      {
+        id: "discord/packages/flux"
+      },
+      {
+        id: "discord/Dispatcher"
+      }
+    ]
+  },
   savedMessagesShim: {
     dependencies: [
+      {
+        id: "discord/Dispatcher"
+      },
       {
         ext: "remind-me",
         id: "savedMessagesStore"

@@ -6,6 +6,18 @@ declare module "@moonlight-mod/wp/remind-me_message" {
   }
 }
 
+declare module "@moonlight-mod/wp/remind-me_savedMessagesPersistedStore" {
+  namespace Stores {
+    declare class SavedMessagesPersistedStore {
+      putSavedMessage(data: SavedMessageData): void;
+      deleteSavedMessage(data: SavedMessageData): boolean;
+      getSavedMessages(): SavedMessageData[];
+    }
+  }
+
+  const SavedMessagesPersistedStore: Stores.SavedMessagesPersistedStore;
+}
+
 declare module "@moonlight-mod/wp/remind-me_savedMessagesStore" {
   import { Store } from "@moonlight-mod/wp/discord/packages/flux";
 

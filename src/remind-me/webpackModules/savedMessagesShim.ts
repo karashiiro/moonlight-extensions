@@ -1,13 +1,11 @@
 import { SavedMessageData, SavedMessagesStore } from "@moonlight-mod/wp/remind-me_savedMessagesStore";
+import { SavedMessagesPersistedStore } from "@moonlight-mod/wp/remind-me_savedMessagesPersistedStore";
 import { MessageStore } from "@moonlight-mod/wp/common_stores";
 import Dispatcher from "@moonlight-mod/wp/discord/Dispatcher";
 import { Message } from "@moonlight-mod/wp/remind-me_message";
-import { SavedMessagesConfig } from "./savedMessagesConfig";
 
 const logger = moonlight.getLogger("remind-me/savedMessagesShim");
 logger.info("Loaded saved messages shim");
-
-const savedMessagesConfig = new SavedMessagesConfig();
 
 /**
  * Stores a message in the saved-message store.
@@ -17,7 +15,7 @@ export function putSavedMessage(data: SavedMessageData): Promise<void> {
   logger.info("Saving message", data);
 
   // Store the message data in our external store
-  savedMessagesConfig.putSavedMessage(data);
+  SavedMessagesPersistedStore.putSavedMessage(data);
 
   // Dispatch a UI event to populate the inbox
   const message = MessageStore.getMessage(data.channelId, data.messageId);
@@ -41,7 +39,7 @@ export function deleteSavedMessage(data: SavedMessageData): Promise<boolean> {
   logger.info("Deleting saved message", data);
 
   // Delete the message fata from our external store
-  if (!savedMessagesConfig.deleteSavedMessage(data)) {
+  if (!SavedMessagesPersistedStore.deleteSavedMessage(data)) {
     return Promise.resolve(false);
   }
 
@@ -66,11 +64,13 @@ export function getSavedMessages(): Promise<void> {
   logger.info("Updating saved messages");
 
   // Fetch all messages from our external store and pull the real message data from Discord
-  const messages: [any, SavedMessageData][] = savedMessagesConfig.getSavedMessages().map((d) => {
-    const message = MessageStore.getMessage(d.channelId, d.messageId);
-    logger.info(message);
-    return [message, d];
-  });
+  const messages: [any, SavedMessageData][] = SavedMessagesPersistedStore.getSavedMessages()
+    .map((d) => {
+      const message = MessageStore.getMessage(d.channelId, d.messageId);
+      logger.info(message);
+      return [message, d];
+    })
+    .filter<[any, SavedMessageData]>(isSavedMessageDataPair);
 
   // Dispatch a UI event to populate the inbox
   Dispatcher.dispatch({
@@ -84,6 +84,10 @@ export function getSavedMessages(): Promise<void> {
   });
 
   return Promise.resolve();
+}
+
+function isSavedMessageDataPair(x: unknown[]): x is [any, SavedMessageData] {
+  return x[0] != null;
 }
 
 /**
