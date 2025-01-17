@@ -66,6 +66,7 @@ export function getSavedMessages(): Promise<void> {
   // Fetch all messages from our external store and pull the real message data from Discord
   const messages: [any, SavedMessageData][] = SavedMessagesPersistedStore.getSavedMessages()
     .map((d) => {
+      // TODO: Fetch message better so that it isn't undefined sometimes
       const message = MessageStore.getMessage(d.channelId, d.messageId);
       logger.info(message);
       return [message, d];
