@@ -7,6 +7,7 @@ const TAB_ROUTER_SIGNATURE = /showTutorial.+TODOS/;
 const SAVED_MESSAGES_API_SIGNATURE =
   /async function .+{.+await.+\.(PUT_SAVED_MESSAGE|DELETE_SAVED_MESSAGE|GET_SAVED_MESSAGES)/;
 const BOOKMARKS_NITRO_SIGNATURE = /jsx.+FOR_LATER_POPOUT_UPSELL/;
+const BOOKMARKS_MENU_GROUP_SIGNATURE = /id:"save-for-later-upsell"/;
 
 // https://moonlight-mod.github.io/ext-dev/webpack/#patching
 export const patches: ExtensionWebExports["patches"] = [
@@ -17,6 +18,16 @@ export const patches: ExtensionWebExports["patches"] = [
         // Strip the Nitro feature gate for Bookmarks
         match: /(?<=function .\(\){return)[^?]+\?(.+(?=:\()):(.+)(?=}function)/,
         replacement: (_m, bookmarksComponent, _g2) => bookmarksComponent
+      }
+    ]
+  },
+  {
+    find: BOOKMARKS_MENU_GROUP_SIGNATURE,
+    replace: [
+      {
+        // Strip the Nitro feature gate for Bookmarks in the Message action menu
+        match: /(?<=function .\(.\){.+return\((?!\)=>).+\|\|.+\|\|)[^?]+\?(.+):.+id:"save-for-later-upsell".+(?=:null)/,
+        replacement: (_m, bookmarksMenuItem) => bookmarksMenuItem
       }
     ]
   },
@@ -160,7 +171,8 @@ export const webpackModules: ExtensionWebExports["webpackModules"] = {
       REMINDERS_EXPERIMENT_SIGNATURE,
       TAB_SELECTOR_SIGNATURE,
       TAB_ROUTER_SIGNATURE,
-      BOOKMARKS_NITRO_SIGNATURE
+      BOOKMARKS_NITRO_SIGNATURE,
+      BOOKMARKS_MENU_GROUP_SIGNATURE
     ],
     entrypoint: true
   }
