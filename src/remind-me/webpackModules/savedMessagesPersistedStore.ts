@@ -14,7 +14,7 @@ const savedMessages: SavedMessagesState = {
   db: {}
 };
 
-class SavedMessagesPersistedStore extends Flux.PersistedStore<SavedMessagesState> {
+class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
   constructor() {
     super(Dispatcher, {});
   }
@@ -74,6 +74,7 @@ function hydrateStore(db: Database): Database {
   return db;
 }
 
+//@ts-expect-error This is defined on PersistedStore, unclear why TS is complaining
 SavedMessagesPersistedStore.persistKey = "SavedMessagesPersistedStore";
 const savedMessagesPersistedStore = new SavedMessagesPersistedStore();
 
