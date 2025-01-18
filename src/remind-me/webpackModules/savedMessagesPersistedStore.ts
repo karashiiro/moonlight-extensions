@@ -80,7 +80,7 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
    */
   deleteSavedMessage(data: SavedMessageData): boolean {
     const key = createKey(data);
-    if (!(key in savedMessages.db2)) {
+    if (!(key in this.getCurrentUserDb())) {
       return false;
     }
 
