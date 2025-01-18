@@ -4,8 +4,10 @@ import Dispatcher from "@moonlight-mod/wp/discord/Dispatcher";
 const logger = moonlight.getLogger("remind-me/savedMessagesPersistedStore");
 logger.info("Loaded savedMessagesPersistedStore");
 
+type Database = Record<string, SavedMessageData>;
+
 interface SavedMessagesState {
-  db: Record<string, SavedMessageData>;
+  db: Database;
 }
 
 const savedMessages: SavedMessagesState = {
@@ -19,10 +21,10 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<SavedMessagesState
 
   initialize(state?: SavedMessagesState) {
     if (state) {
-      savedMessages.db = state.db;
+      savedMessages.db = hydrateStore(state.db);
     }
 
-    logger.info("Initialized SavedMessagesPersistedStore");
+    logger.info("Initialized SavedMessagesPersistedStore", savedMessages);
   }
 
   putSavedMessage(data: SavedMessageData): void {
@@ -58,6 +60,18 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<SavedMessagesState
 
 function createKey(data: SavedMessageData): string {
   return `${data.channelId}-${data.messageId}`;
+}
+
+function hydrateStore(db: Database): Database {
+  for (const k in db) {
+    // During serialization, dates regress to strings and we need to convert them back
+    const dueAt: unknown = db[k].dueAt;
+    if (typeof dueAt === "string") {
+      db[k].dueAt = new Date(dueAt);
+    }
+  }
+
+  return db;
 }
 
 SavedMessagesPersistedStore.persistKey = "SavedMessagesPersistedStore";

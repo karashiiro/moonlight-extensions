@@ -1,14 +1,12 @@
 /// <reference types="@moonlight-mod/types" />
 
-type Timestamp = number;
-
 type Message = object;
 
 interface SavedMessageData {
   channelId: string;
   messageId: string;
-  dueAt?: Timestamp;
-  savedAt?: Timestamp;
+  dueAt?: Date;
+  savedAt?: number;
 }
 
 interface SavedMessage {
@@ -46,7 +44,7 @@ declare module "@moonlight-mod/wp/remind-me_savedMessagesStore" {
   namespace Stores {
     class SavedMessagesStore extends Store<SavedMessage> {
       getIsStale(): boolean;
-      getLastChanged(): Timestamp;
+      getLastChanged(): number;
       getMessageBookmarks(): SavedMessage[];
       getMessageReminders(): SavedMessage[];
       getOverdueMessageReminderCount();
