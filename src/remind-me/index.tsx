@@ -6,9 +6,20 @@ const TAB_SELECTOR_SIGNATURE = /TabBar\.Item.+TODOS/;
 const TAB_ROUTER_SIGNATURE = /showTutorial.+TODOS/;
 const SAVED_MESSAGES_API_SIGNATURE =
   /async function .+{.+await.+\.(PUT_SAVED_MESSAGE|DELETE_SAVED_MESSAGE|GET_SAVED_MESSAGES)/;
+const BOOKMARKS_NITRO_SIGNATURE = /jsx.+FOR_LATER_POPOUT_UPSELL/;
 
 // https://moonlight-mod.github.io/ext-dev/webpack/#patching
 export const patches: ExtensionWebExports["patches"] = [
+  {
+    find: BOOKMARKS_NITRO_SIGNATURE,
+    replace: [
+      {
+        // Strip the Nitro feature gate for Bookmarks
+        match: /(?<=function .\(\){return)[^?]+\?(.+(?=:\()):(.+)(?=}function)/,
+        replacement: (_m, bookmarksComponent, _g2) => bookmarksComponent
+      }
+    ]
+  },
   {
     find: TODOS_EXPERIMENT_SIGNATURE,
     replace: [
@@ -144,7 +155,8 @@ export const webpackModules: ExtensionWebExports["webpackModules"] = {
       TODOS_EXPERIMENT_SIGNATURE,
       REMINDERS_EXPERIMENT_SIGNATURE,
       TAB_SELECTOR_SIGNATURE,
-      TAB_ROUTER_SIGNATURE
+      TAB_ROUTER_SIGNATURE,
+      BOOKMARKS_NITRO_SIGNATURE
     ],
     entrypoint: true
   }
