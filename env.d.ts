@@ -2,9 +2,11 @@
 
 type Message = object;
 
+type Snowflake = `${number}`;
+
 interface SavedMessageData {
-  channelId: string;
-  messageId: string;
+  channelId: Snowflake;
+  messageId: Snowflake;
   dueAt?: Date;
   savedAt?: number;
 }
@@ -22,7 +24,7 @@ declare module "@moonlight-mod/wp/remind-me_message" {
 
 declare module "@moonlight-mod/wp/remind-me_messagesApi" {
   namespace MessagesAPI {
-    function fetchMessage(e: { channelId: string; messageId: string }): Promise<any>;
+    function fetchMessage(e: { channelId: Snowflake; messageId: Snowflake }): Promise<any>;
   }
 }
 

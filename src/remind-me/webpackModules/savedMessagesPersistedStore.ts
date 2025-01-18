@@ -1,17 +1,25 @@
 import Flux from "@moonlight-mod/wp/discord/packages/flux";
 import Dispatcher from "@moonlight-mod/wp/discord/Dispatcher";
+import { UserStore } from "@moonlight-mod/wp/common_stores";
 
 const logger = moonlight.getLogger("remind-me/savedMessagesPersistedStore");
 logger.info("Loaded savedMessagesPersistedStore");
 
-type Database = Record<string, SavedMessageData>;
+type Snowflake = `${number}`;
+type SavedMessageKey = `${Snowflake}-${Snowflake}`;
+
+type SavedMessageDatabase = Record<SavedMessageKey, SavedMessageData>;
+type DatabaseV1 = SavedMessageDatabase;
+type DatabaseV2 = Record<Snowflake, SavedMessageDatabase>;
 
 interface SavedMessagesState {
-  db: Database;
+  db: DatabaseV1;
+  db2: DatabaseV2;
 }
 
 const savedMessages: SavedMessagesState = {
-  db: {}
+  db: {},
+  db2: {}
 };
 
 class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
@@ -19,9 +27,18 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
     super(Dispatcher, {});
   }
 
-  initialize(state?: SavedMessagesState) {
-    if (state) {
-      savedMessages.db = hydrateStore(state.db);
+  initialize(state?: Partial<SavedMessagesState>) {
+    if (state?.db && hasProperties(state.db)) {
+      // Migrate from V1 to V2 format (support multi-account usage)
+      state.db2 = { [getCurrentUserId()]: hydrateStore(state.db) };
+    }
+
+    if (state?.db2) {
+      // Hydrate database objects
+      for (const userId in state.db2) {
+        assertSnowflakeUnsafe(userId);
+        savedMessages.db2[userId] = hydrateStore(state.db2[userId]);
+      }
     }
 
     logger.info("Initialized SavedMessagesPersistedStore", savedMessages);
@@ -29,7 +46,7 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
 
   putSavedMessage(data: SavedMessageData): void {
     const key = createKey(data);
-    savedMessages.db[key] = {
+    this.getCurrentUserDb()[key] = {
       ...data,
       savedAt: Date.now()
     };
@@ -39,31 +56,57 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
 
   deleteSavedMessage(data: SavedMessageData): boolean {
     const key = createKey(data);
-    if (!(key in savedMessages.db)) {
+    if (!(key in savedMessages.db2)) {
       return false;
     }
 
-    delete savedMessages.db[key];
+    delete this.getCurrentUserDb()[key];
     this.emitChange();
 
     return true;
   }
 
   getSavedMessages(): SavedMessageData[] {
-    return Object.values(savedMessages.db);
+    return Object.values(this.getCurrentUserDb());
   }
 
   getState() {
     return { ...savedMessages };
   }
+
+  private getCurrentUserDb(): SavedMessageDatabase {
+    return this.getUserDb(getCurrentUserId());
+  }
+
+  private getUserDb(userId: Snowflake): SavedMessageDatabase {
+    return (savedMessages.db2[userId] ||= {});
+  }
 }
 
-function createKey(data: SavedMessageData): string {
+function getCurrentUserId(): Snowflake {
+  return UserStore.getCurrentUser().id;
+}
+
+function createKey(data: SavedMessageData): SavedMessageKey {
   return `${data.channelId}-${data.messageId}`;
 }
 
-function hydrateStore(db: Database): Database {
+function assertSnowflakeUnsafe(_value: string): asserts _value is Snowflake {
+  return;
+}
+
+function assertKeyUnsafe(_value: string): asserts _value is SavedMessageKey {
+  return;
+}
+
+function hasProperties(o: unknown) {
+  return Object.entries(o || {}).length > 0;
+}
+
+function hydrateStore(db: SavedMessageDatabase): SavedMessageDatabase {
   for (const k in db) {
+    assertKeyUnsafe(k);
+
     // During serialization, dates regress to strings and we need to convert them back
     const dueAt: unknown = db[k].dueAt;
     if (typeof dueAt === "string") {

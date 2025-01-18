@@ -124,6 +124,10 @@ export const webpackModules: ExtensionWebExports["webpackModules"] = {
       },
       {
         id: "discord/Dispatcher"
+      },
+      {
+        ext: "common",
+        id: "stores"
       }
     ]
   },
