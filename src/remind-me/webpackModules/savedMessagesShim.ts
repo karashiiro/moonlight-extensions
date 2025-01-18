@@ -3,6 +3,7 @@ import { SavedMessagesPersistedStore } from "@moonlight-mod/wp/remind-me_savedMe
 import { MessageStore } from "@moonlight-mod/wp/common_stores";
 import Dispatcher from "@moonlight-mod/wp/discord/Dispatcher";
 import { Message } from "@moonlight-mod/wp/remind-me_message";
+import { MessagesAPI } from "@moonlight-mod/wp/remind-me_messagesApi";
 
 const logger = moonlight.getLogger("remind-me/savedMessagesShim");
 logger.info("Loaded saved messages shim");
@@ -55,23 +56,30 @@ export function deleteSavedMessage(data: SavedMessageData): Promise<boolean> {
 /**
  * Refreshes the saved-message store.
  */
-export function getSavedMessages(): Promise<void> {
+export async function getSavedMessages(): Promise<void> {
   if (!SavedMessagesStore.getIsStale()) {
     logger.debug("Saved message list is not yet stale, skipping update");
-    return Promise.resolve();
+    return;
   }
 
   logger.info("Updating saved messages");
 
   // Fetch all messages from our external store and pull the real message data from Discord
-  const messages: [any, SavedMessageData][] = SavedMessagesPersistedStore.getSavedMessages()
-    .map((d) => {
-      // TODO: Fetch message better so that it isn't undefined sometimes
-      const message = MessageStore.getMessage(d.channelId, d.messageId);
-      logger.info(message);
-      return [message, d];
-    })
-    .filter<[any, SavedMessageData]>(isSavedMessageDataPair);
+  const savedMessages = SavedMessagesPersistedStore.getSavedMessages();
+  const messages: [any, SavedMessageData][] = [];
+
+  for (const savedMessage of savedMessages) {
+    const message = await getMessage(savedMessage);
+    if (message == null) continue;
+    messages.push([message, savedMessage]);
+  }
+
+  logger.debug(messages);
+
+  const unresolvedMessageCount = savedMessages.length - messages.length;
+  if (unresolvedMessageCount > 0) {
+    logger.warn(`Encountered ${unresolvedMessageCount} unresolved messages`);
+  }
 
   // Dispatch a UI event to populate the inbox
   Dispatcher.dispatch({
@@ -83,12 +91,20 @@ export function getSavedMessages(): Promise<void> {
       };
     })
   });
-
-  return Promise.resolve();
 }
 
-function isSavedMessageDataPair(x: unknown[]): x is [any, SavedMessageData] {
-  return x[0] != null;
+async function getMessage({ channelId, messageId }: SavedMessageData): Promise<any> {
+  const message = MessageStore.getMessage(channelId, messageId);
+  if (message != null) return message;
+
+  try {
+    logger.debug("Fetching message", messageId, "from channel", channelId);
+    const fetchedMessage = await MessagesAPI.fetchMessage({ channelId, messageId });
+    return fetchedMessage;
+  } catch (err) {
+    logger.error("Failed to fetch message", err);
+    return null;
+  }
 }
 
 /**

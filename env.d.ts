@@ -22,6 +22,12 @@ declare module "@moonlight-mod/wp/remind-me_message" {
   }
 }
 
+declare module "@moonlight-mod/wp/remind-me_messagesApi" {
+  namespace MessagesAPI {
+    function fetchMessage(e: { channelId: string; messageId: string }): Promise<any>;
+  }
+}
+
 declare module "@moonlight-mod/wp/remind-me_savedMessagesPersistedStore" {
   namespace Stores {
     declare class SavedMessagesPersistedStore {
