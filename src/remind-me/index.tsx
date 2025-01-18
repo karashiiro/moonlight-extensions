@@ -27,7 +27,7 @@ export const patches: ExtensionWebExports["patches"] = [
     replace: [
       {
         // Strip the Nitro feature gate for Bookmarks in the Message action menu
-        match: /(?<=function .\(.\){.+return\((?!\)=>).+\|\|.+\|\|)[^?]+\?(.+):.+id:"save-for-later-upsell".+(?=:null)/,
+        match: /(?<=function .\(.\){.+return.+) .\|\|.+\|\|[^?]+\?(.+):.+id:"save-for-later-upsell".+:null/,
         replacement: (_m, bookmarksMenuItem) => bookmarksMenuItem
       }
     ]
