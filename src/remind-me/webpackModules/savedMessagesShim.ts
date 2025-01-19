@@ -36,8 +36,9 @@ export function putSavedMessage(saveData: SavedMessageData): Promise<void> {
 export function deleteSavedMessage(data: SavedMessageData): Promise<boolean> {
   logger.info("Deleting saved message", data);
 
-  // Delete the message fata from our external store
+  // Delete the message data from our external store
   if (!SavedMessagesPersistedStore.deleteSavedMessage(data)) {
+    logger.info("Failed to delete saved message", data);
     return Promise.resolve(false);
   }
 

@@ -78,6 +78,14 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
 
     logger.info("Deleting saved message due to real message being deleted", saveData);
     this.deleteSavedMessage(saveData);
+
+    // Unlike other cases where messages are updated (controlled by MessageStore), this
+    // requires updating SavedMessageStore, which we need to do explicitly to make the
+    // UI update.
+    Dispatcher.dispatch({
+      type: "SAVED_MESSAGE_DELETE",
+      savedMessageData: saveData
+    });
   }
 
   /** LOAD_MESSAGES_SUCCESS */
