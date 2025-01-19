@@ -121,15 +121,6 @@ export const webpackModules: ExtensionWebExports["webpackModules"] = {
       /this\.messageReference=.\.messageReference/
     ]
   },
-  messagesApi: {
-    dependencies: [
-      {
-        ext: "spacepack",
-        id: "spacepack"
-      },
-      /sendClydeError\(.\){/
-    ]
-  },
   savedMessagesStore: {
     dependencies: [
       {
@@ -165,10 +156,6 @@ export const webpackModules: ExtensionWebExports["webpackModules"] = {
       {
         ext: "remind-me",
         id: "message"
-      },
-      {
-        ext: "remind-me",
-        id: "messagesApi"
       },
       {
         ext: "common",

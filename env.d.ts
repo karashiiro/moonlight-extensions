@@ -23,18 +23,12 @@ declare module "@moonlight-mod/wp/remind-me_message" {
   }
 }
 
-declare module "@moonlight-mod/wp/remind-me_messagesApi" {
-  namespace MessagesAPI {
-    function fetchMessage(e: { channelId: Snowflake; messageId: Snowflake }): Promise<any>;
-  }
-}
-
 declare module "@moonlight-mod/wp/remind-me_savedMessagesPersistedStore" {
   namespace Stores {
     declare class SavedMessagesPersistedStore {
-      putSavedMessage(data: SavedMessageData): void;
-      deleteSavedMessage(data: SavedMessageData): boolean;
-      getSavedMessages(): SavedMessageData[];
+      putSavedMessage(message: unknown, saveData: SavedMessageData): void;
+      deleteSavedMessage(saveData: SavedMessageData): boolean;
+      getSavedMessages(): { message: unknown; saveData: SavedMessageData }[];
     }
   }
 

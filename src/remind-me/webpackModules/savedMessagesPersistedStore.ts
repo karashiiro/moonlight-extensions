@@ -5,18 +5,27 @@ import { UserStore } from "@moonlight-mod/wp/common_stores";
 const logger = moonlight.getLogger("remind-me/savedMessagesPersistedStore");
 logger.info("Loaded savedMessagesPersistedStore");
 
-type Snowflake = `${number}`;
 type SavedMessageKey = `${Snowflake}-${Snowflake}`;
 
-type SavedMessageDatabase = Record<SavedMessageKey, SavedMessageData>;
-type DatabaseV1 = SavedMessageDatabase;
-type DatabaseV2 = Record<Snowflake, SavedMessageDatabase>;
+interface SavedMessageDatabaseEntry {
+  message: unknown;
+  saveData: SavedMessageData;
+}
+
+type SavedMessageDatabaseV1 = Record<SavedMessageKey, SavedMessageData>;
+type SavedMessageDatabaseV2 = Record<SavedMessageKey, SavedMessageDatabaseEntry>;
+
+type DatabaseV1 = SavedMessageDatabaseV1;
+type DatabaseV2 = Record<Snowflake, SavedMessageDatabaseV1>;
+type DatabaseV3 = Record<Snowflake, SavedMessageDatabaseV2>;
 
 interface SavedMessagesState {
   /** The initial database version. */
   db: DatabaseV1;
-  /** Added support for  storing data for multiple users. */
+  /** Added support for storing data for multiple users. */
   db2: DatabaseV2;
+  /** [BREAKING: DATA LOSS] Storing message payloads alongside messages to avoid additional API calls. */
+  db3: DatabaseV3;
 }
 
 /**
@@ -25,7 +34,8 @@ interface SavedMessagesState {
  */
 const savedMessages: SavedMessagesState = {
   db: {},
-  db2: {}
+  db2: {},
+  db3: {}
 };
 
 /**
@@ -43,16 +53,11 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
    * @param state The previously-saved state of the store. This will be undefined if the store was never initialized.
    */
   initialize(state?: Partial<SavedMessagesState>) {
-    if (state?.db && hasProperties(state.db)) {
-      // Migrate from V1 to V2 format (support multi-account usage)
-      state.db2 = { [getCurrentUserId()]: hydrateStore(state.db) };
-    }
-
-    if (state?.db2) {
+    if (state?.db3) {
       // Hydrate database objects
-      for (const userId in state.db2) {
+      for (const userId in state.db3) {
         assertSnowflakeUnsafe(userId);
-        savedMessages.db2[userId] = hydrateStore(state.db2[userId]);
+        savedMessages.db3[userId] = hydrateStore(state.db3[userId]);
       }
     }
 
@@ -61,13 +66,17 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
 
   /**
    * Saves message data to the store.
-   * @param data The message data to save.
+   * @param message The raw message payload.
+   * @param saveData The message metadata to save.
    */
-  putSavedMessage(data: SavedMessageData): void {
-    const key = createKey(data);
+  putSavedMessage(message: unknown, saveData: SavedMessageData): void {
+    const key = createKey(saveData);
     this.getCurrentUserDb()[key] = {
-      ...data,
-      savedAt: Date.now()
+      message: message,
+      saveData: {
+        ...saveData,
+        savedAt: Date.now()
+      }
     };
 
     this.emitChange();
@@ -75,11 +84,11 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
 
   /**
    * Deletes a saved message from the store.
-   * @param data The message data to delete.
+   * @param saveData The message data to delete.
    * @returns Whether or not anything was deleted.
    */
-  deleteSavedMessage(data: SavedMessageData): boolean {
-    const key = createKey(data);
+  deleteSavedMessage(saveData: SavedMessageData): boolean {
+    const key = createKey(saveData);
     if (!(key in this.getCurrentUserDb())) {
       return false;
     }
@@ -94,7 +103,7 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
    * Returns all saved message data currently in the store.
    * @returns The saved message data.
    */
-  getSavedMessages(): SavedMessageData[] {
+  getSavedMessages(): SavedMessageDatabaseEntry[] {
     return Object.values(this.getCurrentUserDb());
   }
 
@@ -109,12 +118,12 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
     return { ...savedMessages };
   }
 
-  private getCurrentUserDb(): SavedMessageDatabase {
+  private getCurrentUserDb(): SavedMessageDatabaseV2 {
     return this.getUserDb(getCurrentUserId());
   }
 
-  private getUserDb(userId: Snowflake): SavedMessageDatabase {
-    return (savedMessages.db2[userId] ||= {});
+  private getUserDb(userId: Snowflake): SavedMessageDatabaseV2 {
+    return (savedMessages.db3[userId] ||= {});
   }
 }
 
@@ -155,30 +164,20 @@ function assertKeyUnsafe(_value: string): asserts _value is SavedMessageKey {
 }
 
 /**
- * Returns whether or not the provided object has any properties. This only
- * considers properties defined directly on the object, not on its prototypes.
- * @param o The object to evaluate.
- * @returns Whether or not the object has properties.
- */
-function hasProperties(o: unknown) {
-  return Object.entries(o || {}).length > 0;
-}
-
-/**
  * Hydrates the provided database. When data is persisted, it is serialized and loses
  * all class instance information. The application expects some fields to be class instances,
  * so we need to manually deserialize them to non-primitive types here.
  * @param db The database to hydrate.
  * @returns The input object reference.
  */
-function hydrateStore(db: SavedMessageDatabase): SavedMessageDatabase {
+function hydrateStore(db: SavedMessageDatabaseV2): SavedMessageDatabaseV2 {
   for (const k in db) {
     assertKeyUnsafe(k);
 
     // During serialization, dates regress to strings and we need to convert them back
-    const dueAt: unknown = db[k].dueAt;
+    const dueAt: unknown = db[k].saveData.dueAt;
     if (typeof dueAt === "string") {
-      db[k].dueAt = new Date(dueAt);
+      db[k].saveData.dueAt = new Date(dueAt);
     }
   }
 
