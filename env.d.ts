@@ -18,6 +18,7 @@ interface SavedMessage {
 
 declare module "@moonlight-mod/wp/remind-me_message" {
   declare class Message {
+    guildId: Snowflake;
     constructor(rawMessage: unknown);
   }
 }

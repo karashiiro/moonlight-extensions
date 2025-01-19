@@ -9,7 +9,7 @@ if (modules.length === 0) {
 }
 
 if (modules.length > 1) {
-  logger.warn("Found multiple modules matching SavedMessagesStore");
+  logger.warn("Found multiple modules matching SavedMessagesStore", modules);
 }
 
 export const SavedMessagesStore = modules[0].exports.Z;

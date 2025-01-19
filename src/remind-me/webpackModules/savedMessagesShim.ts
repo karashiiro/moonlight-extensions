@@ -1,9 +1,9 @@
-import { SavedMessagesStore } from "@moonlight-mod/wp/remind-me_savedMessagesStore";
 import { SavedMessagesPersistedStore } from "@moonlight-mod/wp/remind-me_savedMessagesPersistedStore";
 import { MessageStore } from "@moonlight-mod/wp/common_stores";
 import Dispatcher from "@moonlight-mod/wp/discord/Dispatcher";
 import { Message } from "@moonlight-mod/wp/remind-me_message";
 import { MessagesAPI } from "@moonlight-mod/wp/remind-me_messagesApi";
+import { SavedMessagesStore } from "./savedMessagesStore";
 
 const logger = moonlight.getLogger("remind-me/savedMessagesShim");
 logger.info("Loaded saved messages shim");
@@ -66,10 +66,10 @@ export async function getSavedMessages(): Promise<void> {
 
   // Fetch all messages from our external store and pull the real message data from Discord
   const savedMessages = SavedMessagesPersistedStore.getSavedMessages();
-  const messages: [any, SavedMessageData][] = [];
+  const messages: [Message, SavedMessageData][] = [];
 
   for (const savedMessage of savedMessages) {
-    const message = await getMessage(savedMessage);
+    const message = await getSavedMessage(savedMessage);
     if (message == null) continue;
     messages.push([message, savedMessage]);
   }
@@ -84,22 +84,41 @@ export async function getSavedMessages(): Promise<void> {
   // Dispatch a UI event to populate the inbox
   Dispatcher.dispatch({
     type: "SAVED_MESSAGES_UPDATE",
-    savedMessages: messages.map(([message, saveData]) => {
-      return {
-        message: mapMessage(message, saveData),
-        saveData: saveData
-      };
-    })
+    savedMessages: messages.map(([message, saveData]) => ({ message, saveData }))
   });
 }
 
-async function getMessage({ channelId, messageId }: SavedMessageData): Promise<any> {
-  const message = MessageStore.getMessage(channelId, messageId);
-  if (message != null) return message;
+/**
+ * Retrieves a message from the {@link MessageStore}, or fetches it from the API if
+ * it's not present.
+ * @param param0 The channel and message IDs.
+ * @returns The complete raw message.
+ */
+async function getSavedMessage(saveData: SavedMessageData): Promise<Message | null> {
+  const { channelId, messageId } = saveData;
 
+  // Try to get the message from the store
+  const message = MessageStore.getMessage(channelId, messageId);
+  if (message != null) return mapMessage(message, saveData);
+
+  // If it's not present, we need to fetch it from the API
   try {
     logger.debug("Fetching message", messageId, "from channel", channelId);
-    const fetchedMessage = await MessagesAPI.fetchMessage({ channelId, messageId });
+
+    const fetchedMessageRaw = await MessagesAPI.fetchMessage({ channelId, messageId });
+    const fetchedMessage = mapMessage(fetchedMessageRaw, saveData);
+
+    // Cache the message so we don't need to fetch it next time
+    Dispatcher.dispatch({
+      type: "LOCAL_MESSAGES_LOADED",
+      guildId: fetchedMessage.guildId,
+      channelId: channelId,
+      isPushNotification: false,
+      users: [],
+      messages: [fetchedMessageRaw],
+      stale: true
+    });
+
     return fetchedMessage;
   } catch (err) {
     logger.error("Failed to fetch message", err);
