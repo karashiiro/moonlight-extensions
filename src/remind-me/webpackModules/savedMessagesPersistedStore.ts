@@ -1,6 +1,8 @@
 import Flux from "@moonlight-mod/wp/discord/packages/flux";
 import Dispatcher from "@moonlight-mod/wp/discord/Dispatcher";
 import { UserStore } from "@moonlight-mod/wp/common_stores";
+import { Message } from "@moonlight-mod/wp/remind-me_message";
+import { User } from "@moonlight-mod/wp/remind-me_user";
 
 const logger = moonlight.getLogger("remind-me/savedMessagesPersistedStore");
 logger.info("Loaded savedMessagesPersistedStore");
@@ -8,7 +10,7 @@ logger.info("Loaded savedMessagesPersistedStore");
 type SavedMessageKey = `${Snowflake}-${Snowflake}`;
 
 interface SavedMessageDatabaseEntry {
-  message: unknown;
+  message: any;
   saveData: SavedMessageData;
 }
 
@@ -44,7 +46,58 @@ const savedMessages: SavedMessagesState = {
  */
 class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
   constructor() {
-    super(Dispatcher, {});
+    super(Dispatcher, {
+      // The client handles updating the Bookmarks UI automatically when these are dispatched, but
+      // we still need to handle persistence or else it'll be wrong after a reload.
+      MESSAGE_UPDATE: ({ message }: { message: any }) => this.onMessageUpdate(message),
+      MESSAGE_DELETE: ({ id, channelId }: { id: Snowflake; channelId: Snowflake }) =>
+        this.onMessageDelete(id, channelId),
+      LOAD_MESSAGES_SUCCESS: ({ channelId, messages }: { channelId: Snowflake; messages: any[] }) =>
+        this.onLoadMessagesSuccess(channelId, messages)
+    });
+  }
+
+  /** MESSAGE_UPDATE */
+  onMessageUpdate(message: any) {
+    const saveData = { channelId: message.channel_id, messageId: message.id };
+    if (!this.hasSavedMessage(saveData)) {
+      return;
+    }
+
+    const mappedMessage = mapMessage(message, saveData);
+    logger.info("Updating saved message due to real message being updated", mappedMessage, saveData);
+    this.putSavedMessage(mappedMessage, saveData);
+  }
+
+  /** MESSAGE_DELETE */
+  onMessageDelete(messageId: Snowflake, channelId: Snowflake) {
+    const saveData = { channelId, messageId };
+    if (!this.hasSavedMessage(saveData)) {
+      return;
+    }
+
+    logger.info("Deleting saved message due to real message being deleted", saveData);
+    this.deleteSavedMessage(saveData);
+  }
+
+  /** LOAD_MESSAGES_SUCCESS */
+  onLoadMessagesSuccess(channelId: Snowflake, messages: any[]) {
+    let updatedAny = false;
+    for (const message of messages) {
+      const saveData = { channelId: channelId, messageId: message.id };
+      if (!this.hasSavedMessage(saveData)) {
+        continue;
+      }
+
+      const mappedMessage = mapMessage(message, saveData);
+      logger.info("Updating saved message due to receiving potentially-newer version", mappedMessage, saveData);
+      this.putSavedMessage(mappedMessage, saveData);
+      updatedAny = true;
+    }
+
+    if (updatedAny) {
+      this.emitChange();
+    }
   }
 
   /**
@@ -65,11 +118,20 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
   }
 
   /**
+   * Returns whether the provided message is saved or not.
+   * @param saveData The message metadata.
+   */
+  hasSavedMessage(saveData: SavedMessageData): boolean {
+    const key = createKey(saveData);
+    return key in this.getCurrentUserDb();
+  }
+
+  /**
    * Saves message data to the store.
    * @param message The raw message payload.
    * @param saveData The message metadata to save.
    */
-  putSavedMessage(message: unknown, saveData: SavedMessageData): void {
+  putSavedMessage(message: Message, saveData: SavedMessageData): void {
     const key = createKey(saveData);
     this.getCurrentUserDb()[key] = {
       message: message,
@@ -88,11 +150,11 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
    * @returns Whether or not anything was deleted.
    */
   deleteSavedMessage(saveData: SavedMessageData): boolean {
-    const key = createKey(saveData);
-    if (!(key in this.getCurrentUserDb())) {
+    if (!this.hasSavedMessage(saveData)) {
       return false;
     }
 
+    const key = createKey(saveData);
     delete this.getCurrentUserDb()[key];
     this.emitChange();
 
@@ -104,7 +166,10 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
    * @returns The saved message data.
    */
   getSavedMessages(): SavedMessageDatabaseEntry[] {
-    return Object.values(this.getCurrentUserDb());
+    return Object.values(this.getCurrentUserDb()).map(({ message, saveData }) => ({
+      message: mapMessage(message, saveData),
+      saveData: saveData
+    }));
   }
 
   /**
@@ -174,18 +239,44 @@ function hydrateStore(db: SavedMessageDatabaseV2): SavedMessageDatabaseV2 {
   for (const k in db) {
     assertKeyUnsafe(k);
 
+    const entry = db[k];
+
     // During serialization, dates regress to strings and we need to convert them back
-    const dueAt: unknown = db[k].saveData.dueAt;
+    const dueAt: unknown = entry.saveData.dueAt;
     if (typeof dueAt === "string") {
-      db[k].saveData.dueAt = new Date(dueAt);
+      entry.saveData.dueAt = new Date(dueAt);
     }
   }
 
   return db;
 }
 
+/**
+ * Converts a raw message from the Discord API into a Message instance.
+ * @param m A raw message payload.
+ * @param saveData Saved message data for the payload.
+ * @returns A structured Message object that can be used by the application.
+ */
+function mapMessage(m: any, saveData: SavedMessageData): Message {
+  return new Message({
+    ...m,
+    channelId: m.channel_id,
+    messageId: m.message_id,
+    savedAt: new Date(saveData.savedAt ?? Date.now()),
+    authorSummary: m.author_summary,
+    channelSummary: m.channel_summary,
+    messageSummary: m.message_summary,
+    guildId: 0 === m.guild_id ? undefined : m.guild_id,
+    authorId: (0 === m.author_id ? undefined : m.author_id) ?? m.author?.id,
+    notes: m.notes,
+    dueAt: null != saveData.dueAt ? new Date(saveData.dueAt) : undefined,
+    editedTimestamp: m.editedTimestamp ?? m.edited_timestamp,
+    author: m.author ? new User(m.author) : undefined
+  });
+}
+
 //@ts-expect-error This is defined on PersistedStore, unclear why TS is complaining
 SavedMessagesPersistedStore.persistKey = "SavedMessagesPersistedStore";
 const savedMessagesPersistedStore = new SavedMessagesPersistedStore();
 
-export { savedMessagesPersistedStore as SavedMessagesPersistedStore };
+export { savedMessagesPersistedStore as SavedMessagesPersistedStore, mapMessage };

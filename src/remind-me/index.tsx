@@ -121,6 +121,15 @@ export const webpackModules: ExtensionWebExports["webpackModules"] = {
       /this\.messageReference=.\.messageReference/
     ]
   },
+  user: {
+    dependencies: [
+      {
+        ext: "spacepack",
+        id: "spacepack"
+      },
+      /getAvatarURL\(\w{1,2},\w{1,2}\){/
+    ]
+  },
   savedMessagesStore: {
     dependencies: [
       {
@@ -137,6 +146,14 @@ export const webpackModules: ExtensionWebExports["webpackModules"] = {
       },
       {
         id: "discord/Dispatcher"
+      },
+      {
+        ext: "remind-me",
+        id: "message"
+      },
+      {
+        ext: "remind-me",
+        id: "user"
       },
       {
         ext: "common",

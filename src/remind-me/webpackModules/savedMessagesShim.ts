@@ -1,31 +1,28 @@
-import { SavedMessagesPersistedStore } from "@moonlight-mod/wp/remind-me_savedMessagesPersistedStore";
+import { SavedMessagesStore } from "@moonlight-mod/wp/remind-me_savedMessagesStore";
+import { mapMessage, SavedMessagesPersistedStore } from "@moonlight-mod/wp/remind-me_savedMessagesPersistedStore";
 import { MessageStore } from "@moonlight-mod/wp/common_stores";
 import Dispatcher from "@moonlight-mod/wp/discord/Dispatcher";
 import { Message } from "@moonlight-mod/wp/remind-me_message";
-import { SavedMessagesStore } from "./savedMessagesStore";
 
 const logger = moonlight.getLogger("remind-me/savedMessagesShim");
 logger.info("Loaded saved messages shim");
 
 /**
  * Stores a message in the saved-message store.
- * @param data The message data to save.
+ * @param saveData The message data to save.
  */
-export function putSavedMessage(data: SavedMessageData): Promise<void> {
-  const message = MessageStore.getMessage(data.channelId, data.messageId);
+export function putSavedMessage(saveData: SavedMessageData): Promise<void> {
+  const message: Message = MessageStore.getMessage(saveData.channelId, saveData.messageId);
 
-  logger.info("Saving message", message, data);
+  logger.info("Saving message", message, saveData);
 
   // Store the message data in our external store
-  SavedMessagesPersistedStore.putSavedMessage(message, data);
+  SavedMessagesPersistedStore.putSavedMessage(message, saveData);
 
   // Dispatch a UI event to populate the inbox
   Dispatcher.dispatch({
     type: "SAVED_MESSAGE_CREATE",
-    savedMessage: {
-      message: mapMessage(message, data),
-      saveData: data
-    }
+    savedMessage: { message, saveData }
   });
 
   return Promise.resolve();
@@ -77,27 +74,5 @@ export async function getSavedMessages(): Promise<void> {
   Dispatcher.dispatch({
     type: "SAVED_MESSAGES_UPDATE",
     savedMessages: messages
-  });
-}
-
-/**
- * Converts a raw message from the Discord API into a Message instance.
- * @param m A raw message payload.
- * @param saveData Saved message data for the payload.
- * @returns A structured Message object that can be used by the application.
- */
-function mapMessage(m: any, saveData: SavedMessageData): Message {
-  return new Message({
-    ...m,
-    channelId: m.channel_id,
-    messageId: m.message_id,
-    savedAt: new Date(saveData.savedAt ?? Date.now()),
-    authorSummary: m.author_summary,
-    channelSummary: m.channel_summary,
-    messageSummary: m.message_summary,
-    guildId: 0 === m.guild_id ? undefined : m.guild_id,
-    authorId: 0 === m.author_id ? undefined : m.author_id,
-    notes: m.notes,
-    dueAt: null != saveData.dueAt ? new Date(saveData.dueAt) : undefined
   });
 }

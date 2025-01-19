@@ -23,16 +23,26 @@ declare module "@moonlight-mod/wp/remind-me_message" {
   }
 }
 
+declare module "@moonlight-mod/wp/remind-me_user" {
+  declare class User {
+    constructor(rawUser: unknown);
+  }
+}
+
 declare module "@moonlight-mod/wp/remind-me_savedMessagesPersistedStore" {
+  import { Message } from "@moonlight-mod/wp/remind-me_message";
+
   namespace Stores {
     declare class SavedMessagesPersistedStore {
-      putSavedMessage(message: unknown, saveData: SavedMessageData): void;
+      putSavedMessage(message: Message, saveData: SavedMessageData): void;
       deleteSavedMessage(saveData: SavedMessageData): boolean;
-      getSavedMessages(): { message: unknown; saveData: SavedMessageData }[];
+      getSavedMessages(): { message: Message; saveData: SavedMessageData }[];
     }
   }
 
   const SavedMessagesPersistedStore: Stores.SavedMessagesPersistedStore;
+
+  function mapMessage(m: any, saveData: SavedMessageData): Message;
 }
 
 declare module "@moonlight-mod/wp/remind-me_savedMessagesStore" {
