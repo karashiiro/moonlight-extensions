@@ -3,12 +3,13 @@
   "id": "remind-me",
   "version": "1.0.0",
   "apiLevel": 2,
-  "dependencies": [],
+  "dependencies": ["spacepack", "common"],
   "meta": {
     "name": "Remind Me",
     "tagline": "Stop forgetting things",
     "description": "Enables the Bookmarks and Reminders experiments in the Inbox, and patches them to make them usable.",
     "authors": ["karashiiro"],
-    "source": "https://github.com/karashiiro/remind-me"
+    "tags": ["qol"],
+    "source": "https://github.com/karashiiro/moonlight-extensions"
   }
 }
