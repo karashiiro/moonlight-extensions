@@ -34,6 +34,8 @@ declare module "@moonlight-mod/wp/remind-me_savedMessagesPersistedStore" {
 
   namespace Stores {
     declare class SavedMessagesPersistedStore {
+      hasSavedMessage(saveData: SavedMessageData): boolean;
+      getSavedMessage(saveData: SavedMessageData): { message: Message; saveData: SavedMessageData } | null;
       putSavedMessage(message: Message, saveData: SavedMessageData): void;
       deleteSavedMessage(saveData: SavedMessageData): boolean;
       getSavedMessages(): { message: Message; saveData: SavedMessageData }[];

@@ -134,6 +134,20 @@ class SavedMessagesPersistedStore extends Flux.PersistedStore<any> {
     return key in this.getCurrentUserDb();
   }
 
+  getSavedMessage(saveData: SavedMessageData): SavedMessageDatabaseEntry | null {
+    const key = createKey(saveData);
+    const entry = this.getCurrentUserDb()[key];
+    if (!entry) {
+      return null;
+    }
+
+    const { message, saveData: saveData2 } = entry;
+    return {
+      message: mapMessage(message, saveData2),
+      saveData: saveData2
+    };
+  }
+
   /**
    * Saves message data to the store.
    * @param message The raw message payload.

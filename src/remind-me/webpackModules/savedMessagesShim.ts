@@ -12,7 +12,9 @@ logger.info("Loaded saved messages shim");
  * @param saveData The message data to save.
  */
 export function putSavedMessage(saveData: SavedMessageData): Promise<void> {
-  const message: Message = MessageStore.getMessage(saveData.channelId, saveData.messageId);
+  const message: Message =
+    SavedMessagesPersistedStore.getSavedMessage(saveData)?.message ??
+    MessageStore.getMessage(saveData.channelId, saveData.messageId);
 
   logger.info("Saving message", message, saveData);
 
