@@ -293,8 +293,25 @@ function mapMessage(m: any, saveData: SavedMessageData): Message {
     notes: m.notes,
     dueAt: null != saveData.dueAt ? new Date(saveData.dueAt) : undefined,
     editedTimestamp: m.editedTimestamp ?? m.edited_timestamp,
-    author: m.author ? new User(m.author) : undefined
+    author: m.author ? new User(m.author) : undefined,
+    embeds: m.embeds?.map((embed: any) => {
+      const color = embed.color;
+      return {
+        ...embed,
+        color: typeof color === "number" ? asWebColor(color) : color
+      };
+    })
   });
+}
+
+/**
+ * Converts the provided numeric color into a web-compliant hex string.
+ * @param value The input color as an integer.
+ * @returns The input color, converted into a color string.
+ */
+function asWebColor(value: number): string {
+  const hexValue = value.toString(16).padStart(6, "0");
+  return "#" + hexValue;
 }
 
 //@ts-expect-error This is defined on PersistedStore, unclear why TS is complaining
