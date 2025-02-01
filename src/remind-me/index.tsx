@@ -2,7 +2,7 @@ import { ExtensionWebExports } from "@moonlight-mod/types";
 
 const TODOS_EXPERIMENT_SIGNATURE = "2022-08_message_todos_staff_only";
 const REMINDERS_EXPERIMENT_SIGNATURE = "2024-06_message_bookmarks";
-const TAB_SELECTOR_SIGNATURE = /TabBar\.Item.+TODOS/;
+const TAB_SELECTOR_SIGNATURE = /Item.+TODOS/;
 const TAB_ROUTER_SIGNATURE = /showTutorial.+TODOS/;
 const SAVED_MESSAGES_API_SIGNATURE =
   /async function .+{.+await.+\.(PUT_SAVED_MESSAGE|DELETE_SAVED_MESSAGE|GET_SAVED_MESSAGES)/;
