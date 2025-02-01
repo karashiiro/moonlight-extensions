@@ -3,7 +3,7 @@ import spacepack from "@moonlight-mod/wp/spacepack_spacepack";
 const logger = moonlight.getLogger("remind-me/savedMessagesStore");
 logger.info("Loading SavedMessagesStore");
 
-const modules = spacepack.findByCode('"SavedMess' + 'agesStore"');
+const modules = spacepack.findByCode('"SavedMessagesStore"').filter((mod) => !mod.id.toString().includes("remind-me"));
 if (modules.length === 0) {
   logger.error("Failed to find any modules matching SavedMessagesStore");
 }
