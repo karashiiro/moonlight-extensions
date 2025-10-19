@@ -1,0 +1,38 @@
+{
+  "$schema": "https://moonlight-mod.github.io/manifest.schema.json",
+  "id": "xsoverlay-notifications",
+  "version": "1.0.0",
+  "apiLevel": 2,
+  "dependencies": ["common", "spacepack"],
+  "meta": {
+    "name": "XSOverlay Notifications",
+    "tagline": "Discord notifications in VR",
+    "description": "Display Discord notifications in VR using XSOverlay. Get notified about mentions, DMs, and server messages while you're in VR! Port of Eidenz/XSOverlay-BetterDiscord.",
+    "authors": ["karashiiro"],
+    "tags": ["qol"],
+    "source": "https://github.com/karashiiro/moonlight-extensions/tree/main/src/xsoverlay-notifications"
+  },
+  "settings": {
+    "enabled": {
+      "displayName": "Enable notifications",
+      "description": "Master toggle for receiving Discord notifications through XSOverlay",
+      "type": "boolean",
+      "default": true,
+      "advice": "none"
+    },
+    "enableDMs": {
+      "displayName": "Enable DM notifications",
+      "description": "Show notifications for direct messages and group DMs",
+      "type": "boolean",
+      "default": true,
+      "advice": "none"
+    },
+    "enableServers": {
+      "displayName": "Enable server notifications",
+      "description": "Show notifications for server messages (when mentioned or in allowed channels)",
+      "type": "boolean",
+      "default": true,
+      "advice": "none"
+    }
+  }
+}

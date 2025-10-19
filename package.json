@@ -10,6 +10,8 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "lint:report": "eslint --output-file eslint_report.json --format json src",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,json}\"",
     "typecheck": "tsc --noEmit",
     "check": "pnpm run lint && pnpm run typecheck"
   },
